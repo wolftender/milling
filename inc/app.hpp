@@ -3,6 +3,7 @@
 #include "context.hpp"
 #include "store.hpp"
 #include "grid.hpp"
+#include "parser.hpp"
 
 namespace mini {
 	class application : public app_window {

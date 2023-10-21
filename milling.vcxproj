@@ -25,6 +25,7 @@
     <ClInclude Include="inc\context.hpp" />
     <ClInclude Include="inc\grid.hpp" />
     <ClInclude Include="inc\gui.hpp" />
+    <ClInclude Include="inc\parser.hpp" />
     <ClInclude Include="inc\scamera.hpp" />
     <ClInclude Include="inc\shader.hpp" />
     <ClInclude Include="inc\store.hpp" />
@@ -39,6 +40,7 @@
     <ClCompile Include="src\grid.cpp" />
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\parser.cpp" />
     <ClCompile Include="src\scamera.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\store.cpp" />
