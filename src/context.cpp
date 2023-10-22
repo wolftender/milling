@@ -49,7 +49,7 @@ namespace mini {
 		m_screen_shader->compile ();
 
 		m_ambient = glm::vec3{ 0.2f, 0.2f, 0.2f };
-		m_gamma = 0.9f;
+		m_gamma = 0.8f;
 
 		m_init_frame_buffer ();
 		m_init_screen_quad ();

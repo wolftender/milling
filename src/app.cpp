@@ -75,7 +75,7 @@ namespace mini {
 			1000, 
 			1000);
 
-		m_block->set_block_size({10.0f, 4.0f, 10.0f});
+		m_block->set_block_size({15.0f, 4.0f, 10.0f});
 
 		// create cutter
 		m_cutter = std::make_unique<milling_cutter>(
@@ -86,8 +86,10 @@ namespace mini {
 		// setup lights
 		auto& light = m_context.get_light(0);
 		light.color = { 1.0f, 1.0f, 1.0f };
-		light.position = { 0.0f, 2.0f, 2.0f };
-		light.intensity = 0.7f;
+		light.position = { 0.0f, 8.0f, 8.0f };
+		light.intensity = 0.8f;
+		light.att_sq = 0.0f;
+		light.att_lin = 0.1f;
 	}
 
 	void application::t_integrate(float delta_time) {

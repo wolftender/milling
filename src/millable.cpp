@@ -140,6 +140,7 @@ namespace mini {
 		m_vao_w(0),
 		m_buffer_position_w(0),
 		m_buffer_index_w(0),
+		m_buffer_normal_w(0),
 		m_heightmap_width(width),
 		m_heightmap_height(height),
 		m_block_width(width),
@@ -172,6 +173,11 @@ namespace mini {
 		shader.set_uniform("u_view", view_matrix);
 		shader.set_uniform("u_projection", proj_matrix);
 
+		context.set_lights(shader);
+
+		shader.set_uniform("u_surface_color", glm::vec3{ 1.3f, 1.3f, 0.3f });
+		shader.set_uniform("u_shininess", 3.0f);
+
 		glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
 
 		glBindVertexArray(0);
@@ -185,6 +191,11 @@ namespace mini {
 		wall_shader.set_uniform("u_world", world_matrix);
 		wall_shader.set_uniform("u_view", view_matrix);
 		wall_shader.set_uniform("u_projection", proj_matrix);
+
+		context.set_lights(wall_shader);
+
+		wall_shader.set_uniform("u_surface_color", glm::vec3{ 1.3f, 1.3f, 0.3f });
+		wall_shader.set_uniform("u_shininess", 3.0f);
 
 		glDrawElements(GL_TRIANGLES, m_indices_w.size(), GL_UNSIGNED_INT, nullptr);
 
@@ -274,6 +285,7 @@ namespace mini {
 
 		glGenBuffers(1, &m_buffer_position_w);
 		glGenBuffers(1, &m_buffer_index_w);
+		glGenBuffers(1, &m_buffer_normal_w);
 
 		const uint32_t num_points_x = m_block_width + 1;
 		const uint32_t num_points_y = m_block_height + 1;
@@ -282,10 +294,13 @@ namespace mini {
 		const float step_y = 1.0f / static_cast<float>(m_block_height);
 
 		m_positions_w.reserve((2 * num_points_x + 2 * num_points_y) * 6);
+		m_normals_w.reserve((2 * num_points_x + 2 * num_points_y) * 6);
 		m_indices_w.reserve((2 * num_points_x + 2 * num_points_y) * 6);
 		uint32_t base = 0;
 		
 		for (uint32_t zm = 0; zm <= 1; ++zm) {
+			float norm_dir = zm == 0 ? -1.0f : 1.0f;
+
 			for (uint32_t cx = 0; cx < num_points_x; ++cx) {
 				float pos_x = step_x * cx - 0.5f;
 				float pos_z = -0.5f + 1.0 * zm;
@@ -294,9 +309,17 @@ namespace mini {
 				m_positions_w.push_back(0.0f);
 				m_positions_w.push_back(pos_z);
 
+				m_normals_w.push_back(0.0f);
+				m_normals_w.push_back(0.0f);
+				m_normals_w.push_back(norm_dir);
+
 				m_positions_w.push_back(pos_x);
 				m_positions_w.push_back(-1.0f);
 				m_positions_w.push_back(pos_z);
+
+				m_normals_w.push_back(0.0f);
+				m_normals_w.push_back(0.0f);
+				m_normals_w.push_back(norm_dir);
 
 				if (cx != num_points_x - 1) {
 					m_indices_w.push_back(base + 0);
@@ -314,6 +337,8 @@ namespace mini {
 		}
 
 		for (uint32_t xm = 0; xm <= 1; ++xm) {
+			float norm_dir = xm == 0 ? -1.0f : 1.0f;
+
 			for (uint32_t cy = 0; cy < num_points_y; ++cy) {
 				float pos_z = step_y * cy - 0.5f;
 				float pos_x = -0.5f + 1.0 * xm;
@@ -322,9 +347,17 @@ namespace mini {
 				m_positions_w.push_back(0.0f);
 				m_positions_w.push_back(pos_z);
 
+				m_normals_w.push_back(norm_dir);
+				m_normals_w.push_back(0.0f);
+				m_normals_w.push_back(0.0f);
+
 				m_positions_w.push_back(pos_x);
 				m_positions_w.push_back(-1.0f);
 				m_positions_w.push_back(pos_z);
+
+				m_normals_w.push_back(norm_dir);
+				m_normals_w.push_back(0.0f);
+				m_normals_w.push_back(0.0f);
 
 				if (cy != num_points_y - 1) {
 					m_indices_w.push_back(base + 0);
@@ -345,6 +378,11 @@ namespace mini {
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * m_positions_w.size(), m_positions_w.data(), GL_STATIC_DRAW);
 		glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(float) * 3, nullptr);
 		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_buffer_normal_w);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * m_normals_w.size(), m_normals_w.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(float) * 3, nullptr);
+		glEnableVertexAttribArray(1);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_buffer_index_w);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * m_indices_w.size(), m_indices_w.data(), GL_STATIC_DRAW);
@@ -381,7 +419,11 @@ namespace mini {
 			glDeleteBuffers(1, &m_buffer_position_w);
 		}
 
+		if (m_buffer_normal_w) {
+			glDeleteBuffers(1, &m_buffer_normal_w);
+		}
+
 		m_vao = m_buffer_index = m_buffer_position = m_texture = 0;
-		m_vao_w = m_buffer_index_w = m_buffer_position_w = 0;
+		m_vao_w = m_buffer_index_w = m_buffer_position_w = m_buffer_normal_w = 0;
 	}
 }

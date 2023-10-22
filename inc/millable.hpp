@@ -33,10 +33,11 @@ namespace mini {
 			GLuint m_buffer_position, m_buffer_index;
 
 			GLuint m_vao_w;
-			GLuint m_buffer_position_w, m_buffer_index_w;
+			GLuint m_buffer_position_w, m_buffer_index_w, m_buffer_normal_w;
 
 			std::vector<float> m_positions;
 			std::vector<float> m_positions_w;
+			std::vector<float> m_normals_w;
 
 			std::vector<uint32_t> m_indices;
 			std::vector<uint32_t> m_indices_w;

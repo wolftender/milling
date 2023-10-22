@@ -9,6 +9,7 @@ uniform mat4 u_view;
 uniform mat4 u_projection;
 
 out vec3 mv_local_pos;
+out vec3 mv_world_pos;
 
 void main () {
     mv_local_pos = a_position;
@@ -19,5 +20,8 @@ void main () {
     vec4 mapped_position = vec4(a_position, 1.0);
     mapped_position.y -= height;
 
-    gl_Position = u_projection * u_view * u_world * mapped_position;
+    vec4 world_pos = u_world * mapped_position;
+    mv_world_pos = world_pos.xyz;
+
+    gl_Position = u_projection * u_view * world_pos;
 }
