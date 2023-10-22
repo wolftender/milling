@@ -10,5 +10,5 @@ void main () {
     vec2 uv = mv_local_pos.xz + 0.5;
     float height = texture(u_heightmap, uv).r;
 
-    output_color = vec4(uv.x, uv.y, 1.0, 1.0);
+    output_color = vec4(uv.x, uv.y, -mv_local_pos.y * height, 1.0);
 }

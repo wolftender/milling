@@ -44,6 +44,29 @@ namespace mini {
 	};
 
 	constexpr const uint64_t RENDER_QUEUE_SIZE = 1024;
+	constexpr const uint64_t MAX_LIGHTS = 10;
+
+	struct point_light_t {
+		glm::vec3 color;
+		glm::vec3 position;
+
+		float intensity;
+		float att_const;
+		float att_lin;
+		float att_sq;
+
+		point_light_t() {
+			color = { 0.0f, 0.0f, 0.0f };
+			position = { 0.0f, 0.0f, 0.0f };
+
+			intensity = 0.0f;
+
+			att_const = 1.0f;
+			att_lin = 0.15f;
+			att_sq = 0.002f;
+		}
+	};
+
 
 	/// <summary>
 	/// This class represents the graphics context. Because the application is
@@ -59,6 +82,7 @@ namespace mini {
 				glm::mat4x4 world_matrix;
 			};
 
+			std::array<point_light_t, MAX_LIGHTS> m_lights;
 			std::array<enqueued_renderable_t, RENDER_QUEUE_SIZE> m_queue;
 			uint64_t m_last_queue_index;
 
@@ -77,6 +101,9 @@ namespace mini {
 
 			render_hook_t m_pre_render;
 			render_hook_t m_post_render;
+
+			glm::vec3 m_ambient;
+			float m_gamma;
 
 		public:
 			app_context (const video_mode_t & video_mode);
@@ -97,6 +124,10 @@ namespace mini {
 
 			const video_mode_t & get_video_mode () const;
 			const GLuint get_front_buffer () const;
+
+			const point_light_t& get_light(const uint64_t index) const;
+			point_light_t& get_light(const uint64_t index);
+			void set_lights(shader_program& shader) const;
 
 			camera & get_camera ();
 			const camera & get_camera () const;

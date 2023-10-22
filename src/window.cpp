@@ -131,6 +131,8 @@ namespace mini {
 	app_window::~app_window () { }
 
 	void app_window::message_loop () {
+		m_last_frame = std::chrono::steady_clock::now();
+
 		while (!glfwWindowShouldClose (m_window.get ())) {
 			glfwPollEvents ();
 
@@ -143,6 +145,10 @@ namespace mini {
 			ImGui_ImplOpenGL3_NewFrame ();
 			ImGui_ImplGlfw_NewFrame ();
 			ImGui::NewFrame ();
+
+			if (elapsed > 0.1f) {
+				elapsed = 0.1f;
+			}
 
 			t_integrate (elapsed);
 			t_render ();

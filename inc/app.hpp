@@ -28,7 +28,7 @@ namespace mini {
 			std::shared_ptr<grid_object> m_grid_xz;
 			std::shared_ptr<millable_block> m_block;
 
-			milling_cutter m_cutter;
+			std::unique_ptr<milling_cutter> m_cutter;
 
 		public:
 			float get_cam_yaw() const;
