@@ -28,7 +28,12 @@ namespace mini {
 			float m_radius;
 			
 		public:
-			milling_cutter(std::shared_ptr<shader_program> shader, float radius, const millable_block& block);
+			milling_cutter(
+				std::shared_ptr<shader_program> shader, 
+				float radius, 
+				bool spherical, 
+				const millable_block& block);
+
 			~milling_cutter() = default;
 
 			void update(const float delta_time, millable_block& block);

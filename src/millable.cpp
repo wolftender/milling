@@ -175,7 +175,7 @@ namespace mini {
 
 		context.set_lights(shader);
 
-		shader.set_uniform("u_surface_color", glm::vec3{ 1.3f, 1.3f, 0.3f });
+		shader.set_uniform("u_surface_color", glm::vec3{ 1.0f, 1.0f, 1.0f });
 		shader.set_uniform("u_shininess", 3.0f);
 
 		glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
@@ -194,7 +194,7 @@ namespace mini {
 
 		context.set_lights(wall_shader);
 
-		wall_shader.set_uniform("u_surface_color", glm::vec3{ 1.3f, 1.3f, 0.3f });
+		wall_shader.set_uniform("u_surface_color", glm::vec3{ 1.0f, 1.0f, 1.0f });
 		wall_shader.set_uniform("u_shininess", 3.0f);
 
 		glDrawElements(GL_TRIANGLES, m_indices_w.size(), GL_UNSIGNED_INT, nullptr);

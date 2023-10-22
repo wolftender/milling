@@ -86,6 +86,7 @@ namespace mini {
 		m_cutter = std::make_unique<milling_cutter>(
 			m_store.get_shader("phong"),
 			0.5f,
+			true,
 			*m_block.get());
 
 		m_curve = std::make_shared<curve>(m_store.get_shader("line"));

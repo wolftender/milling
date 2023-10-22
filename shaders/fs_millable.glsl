@@ -70,10 +70,10 @@ void main () {
     vec2 uv = mv_local_pos.xz + 0.5;
 
     float s11 = texture(u_heightmap, uv).r;
-	float s01 = texture(u_heightmap, uv + offset.xy * texel_size).r;
-	float s21 = texture(u_heightmap, uv + offset.zy * texel_size).r;
-	float s10 = texture(u_heightmap, uv + offset.yx * texel_size).r;
-	float s12 = texture(u_heightmap, uv + offset.yz * texel_size).r;
+	float s01 = texture(u_heightmap, uv + offset.xy * 4.0 * texel_size).r;
+	float s21 = texture(u_heightmap, uv + offset.zy * 4.0 * texel_size).r;
+	float s10 = texture(u_heightmap, uv + offset.yx * 4.0 * texel_size).r;
+	float s12 = texture(u_heightmap, uv + offset.yz * 4.0 * texel_size).r;
 
     vec3 va = normalize (vec3 (size.xy, multiplier * (s21 - s01)));
 	vec3 vb = normalize (vec3 (size.yx, multiplier * (s12 - s10)));
@@ -96,5 +96,16 @@ void main () {
         }
     }
 
-    output_color = gamma_correct (vec4 (u_ambient * u_surface_color, 1.0) + phong_component, u_gamma);
+    // Pick a coordinate to visualize in a grid
+    vec2 gr_coord = mv_world_pos.xz;
+
+    vec2 grid = abs(fract(gr_coord - 0.5) - 0.5) / fwidth(gr_coord);
+    float gr_line = min(grid.x, grid.y);
+
+    // Just visualize the grid lines directly
+    float gr_color = 1.0 - min(gr_line, 1.0);
+
+    vec3 final_color = (1.0 - u_surface_color) * gr_color + (1.0 - gr_color) * u_surface_color;
+
+    output_color = gamma_correct (vec4 (u_ambient * final_color, 1.0) + phong_component, u_gamma);
 }

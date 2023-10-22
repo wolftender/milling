@@ -4,12 +4,13 @@
 #include "cutter.hpp" 
 
 namespace mini {
-	static millable_block::milling_mask_t make_mask(float radius, const millable_block& block) {
+	static millable_block::milling_mask_t make_mask(float radius, bool spherical, const millable_block& block) {
 		assert(radius > 0.0f && "radius has to be positive");
 
 		auto block_size = block.get_block_size();
 		float unit_size_x = block_size.x / block.get_heightmap_width();
 		float unit_size_y = block_size.z / block.get_heightmap_height();
+		float unit_size_z = 1.0f / block_size.y;
 
 		uint32_t mask_width = static_cast<uint32_t>(2*radius / unit_size_x) + 1;
 		uint32_t mask_height = static_cast<uint32_t>(2*radius / unit_size_y) + 1;
@@ -18,6 +19,7 @@ namespace mini {
 
 		float cx = radius;
 		float cy = radius;
+		float rr = radius * radius;
 
 		for (uint32_t x = 0; x < mask_width; ++x) {
 			for (uint32_t y = 0; y < mask_height; ++y) {
@@ -29,7 +31,11 @@ namespace mini {
 				float d = dx * dx + dy * dy;
 
 				if (d <= radius * radius) {
-					mask.mask[y * mask_width + x] = 0.0f;
+					if (spherical) {
+						mask.mask[y * mask_width + x] = (radius - sqrtf(rr - d)) * unit_size_z;
+					} else {
+						mask.mask[y * mask_width + x] = 0.0f;
+					}
 				} else {
 					mask.mask[y * mask_width + x] = 1.0f;
 				}
@@ -39,8 +45,13 @@ namespace mini {
 		return mask;
 	}
 
-	milling_cutter::milling_cutter(std::shared_ptr<shader_program> shader, float radius, const millable_block& block) :
-		m_mask(make_mask(radius, block)),
+	milling_cutter::milling_cutter(
+		std::shared_ptr<shader_program> shader, 
+		float radius, 
+		bool spherical, 
+		const millable_block& block) :
+
+		m_mask(make_mask(radius, spherical, block)),
 		m_radius(radius),
 		m_position(0.0f, -2.5f, 0.0f) {
 
@@ -48,7 +59,6 @@ namespace mini {
 	}
 
 	void milling_cutter::update(const float delta_time, millable_block& block) {
-		m_position.x += delta_time * 0.5f;
 		m_position.z += delta_time * 0.5f;
 
 		// calculate the offset
