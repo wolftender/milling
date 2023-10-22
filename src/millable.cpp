@@ -127,16 +127,25 @@ namespace mini {
 		return m_block_translation;
 	}
 
-	millable_block::millable_block(std::shared_ptr<shader_program> shader, uint32_t width, uint32_t height) :
+	millable_block::millable_block(
+		std::shared_ptr<shader_program> shader, 
+		std::shared_ptr<shader_program> wall_shader, 
+		uint32_t width, 
+		uint32_t height) :
+
 		m_vao(0), 
 		m_buffer_index(0), 
 		m_buffer_position(0),
 		m_texture(0),
+		m_vao_w(0),
+		m_buffer_position_w(0),
+		m_buffer_index_w(0),
 		m_heightmap_width(width),
 		m_heightmap_height(height),
 		m_block_width(width),
 		m_block_height(height),
 		m_block_shader(shader),
+		m_wall_shader(wall_shader),
 		m_block_dimensions(1.0f),
 		m_block_translation(0.0f) {
 
@@ -164,6 +173,20 @@ namespace mini {
 		shader.set_uniform("u_projection", proj_matrix);
 
 		glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+
+		glBindVertexArray(0);
+
+		/// WALLS
+		glBindVertexArray(m_vao_w);
+
+		auto& wall_shader = *m_wall_shader.get();
+
+		wall_shader.bind();
+		wall_shader.set_uniform("u_world", world_matrix);
+		wall_shader.set_uniform("u_view", view_matrix);
+		wall_shader.set_uniform("u_projection", proj_matrix);
+
+		glDrawElements(GL_TRIANGLES, m_indices_w.size(), GL_UNSIGNED_INT, nullptr);
 
 		glBindVertexArray(0);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -241,6 +264,92 @@ namespace mini {
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * m_indices.size(), m_indices.data(), GL_STATIC_DRAW);
 
 		glBindVertexArray(0);
+
+		m_init_wall_buffers();
+	}
+
+	void millable_block::m_init_wall_buffers() {
+		glGenVertexArrays(1, &m_vao_w);
+		glBindVertexArray(m_vao_w);
+
+		glGenBuffers(1, &m_buffer_position_w);
+		glGenBuffers(1, &m_buffer_index_w);
+
+		const uint32_t num_points_x = m_block_width + 1;
+		const uint32_t num_points_y = m_block_height + 1;
+
+		const float step_x = 1.0f / static_cast<float>(m_block_width);
+		const float step_y = 1.0f / static_cast<float>(m_block_height);
+
+		m_positions_w.reserve((2 * num_points_x + 2 * num_points_y) * 6);
+		m_indices_w.reserve((2 * num_points_x + 2 * num_points_y) * 6);
+		uint32_t base = 0;
+		
+		for (uint32_t zm = 0; zm <= 1; ++zm) {
+			for (uint32_t cx = 0; cx < num_points_x; ++cx) {
+				float pos_x = step_x * cx - 0.5f;
+				float pos_z = -0.5f + 1.0 * zm;
+
+				m_positions_w.push_back(pos_x);
+				m_positions_w.push_back(0.0f);
+				m_positions_w.push_back(pos_z);
+
+				m_positions_w.push_back(pos_x);
+				m_positions_w.push_back(-1.0f);
+				m_positions_w.push_back(pos_z);
+
+				if (cx != num_points_x - 1) {
+					m_indices_w.push_back(base + 0);
+					m_indices_w.push_back(base + 1);
+					m_indices_w.push_back(base + 2);
+
+					m_indices_w.push_back(base + 1);
+					m_indices_w.push_back(base + 2);
+					m_indices_w.push_back(base + 3
+					);
+				}
+
+				base += 2;
+			}
+		}
+
+		for (uint32_t xm = 0; xm <= 1; ++xm) {
+			for (uint32_t cy = 0; cy < num_points_y; ++cy) {
+				float pos_z = step_y * cy - 0.5f;
+				float pos_x = -0.5f + 1.0 * xm;
+
+				m_positions_w.push_back(pos_x);
+				m_positions_w.push_back(0.0f);
+				m_positions_w.push_back(pos_z);
+
+				m_positions_w.push_back(pos_x);
+				m_positions_w.push_back(-1.0f);
+				m_positions_w.push_back(pos_z);
+
+				if (cy != num_points_y - 1) {
+					m_indices_w.push_back(base + 0);
+					m_indices_w.push_back(base + 1);
+					m_indices_w.push_back(base + 2);
+
+					m_indices_w.push_back(base + 1);
+					m_indices_w.push_back(base + 2);
+					m_indices_w.push_back(base + 3
+					);
+				}
+
+				base += 2;
+			}
+		}
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_buffer_position_w);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * m_positions_w.size(), m_positions_w.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(float) * 3, nullptr);
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_buffer_index_w);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * m_indices_w.size(), m_indices_w.data(), GL_STATIC_DRAW);
+
+		glBindVertexArray(0);
 	}
 
 	void millable_block::m_free_buffers() {
@@ -252,6 +361,10 @@ namespace mini {
 			glDeleteVertexArrays(1, &m_vao);
 		}
 
+		if (m_vao_w) {
+			glDeleteVertexArrays(1, &m_vao_w);
+		}
+
 		if (m_buffer_position) {
 			glDeleteBuffers(1, &m_buffer_position);
 		}
@@ -260,6 +373,15 @@ namespace mini {
 			glDeleteBuffers(1, &m_buffer_index);
 		}
 
+		if (m_buffer_index_w) {
+			glDeleteBuffers(1, &m_buffer_index_w);
+		}
+
+		if (m_buffer_position_w) {
+			glDeleteBuffers(1, &m_buffer_position_w);
+		}
+
 		m_vao = m_buffer_index = m_buffer_position = m_texture = 0;
+		m_vao_w = m_buffer_index_w = m_buffer_position_w = 0;
 	}
 }

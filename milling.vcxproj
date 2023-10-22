@@ -60,6 +60,7 @@
     <None Include="shaders\fs_billboard.glsl" />
     <None Include="shaders\fs_grid_xz.glsl" />
     <None Include="shaders\fs_millable.glsl" />
+    <None Include="shaders\fs_millable_w.glsl" />
     <None Include="shaders\fs_solidcolor.glsl" />
     <None Include="shaders\fs_white.glsl" />
     <None Include="shaders\vs_basic.glsl" />
@@ -67,6 +68,7 @@
     <None Include="shaders\vs_billboard_s.glsl" />
     <None Include="shaders\vs_grid.glsl" />
     <None Include="shaders\vs_millable.glsl" />
+    <None Include="shaders\vs_millable_w.glsl" />
     <None Include="shaders\vs_pass.glsl" />
     <None Include="shaders\vs_position.glsl" />
     <None Include="shaders\vs_sprite.glsl" />

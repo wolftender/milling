@@ -62,10 +62,17 @@ namespace mini {
 		m_store.load_shader("billboard", "shaders/vs_billboard.glsl", "shaders/fs_billboard.glsl");
 		m_store.load_shader("billboard_s", "shaders/vs_billboard_s.glsl", "shaders/fs_billboard.glsl");
 		m_store.load_shader("millable", "shaders/vs_millable.glsl", "shaders/fs_millable.glsl");
+		m_store.load_shader("millable_w", "shaders/vs_millable_w.glsl", "shaders/fs_millable_w.glsl");
 
 		// objects
 		m_grid_xz = std::make_shared<grid_object>(m_store.get_shader("grid_xz"));
-		m_block = std::make_shared<millable_block>(m_store.get_shader("millable"), 1000, 1000);
+
+		// millable block
+		m_block = std::make_shared<millable_block>(
+			m_store.get_shader("millable"), 
+			m_store.get_shader("millable_w"), 
+			1000, 
+			1000);
 
 		m_block->set_block_size({10.0f, 4.0f, 10.0f});
 	}

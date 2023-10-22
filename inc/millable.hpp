@@ -31,13 +31,18 @@ namespace mini {
 			GLuint m_vao;
 			GLuint m_texture;
 			GLuint m_buffer_position, m_buffer_index;
-			GLuint m_buffer_position_wx, m_buffer_index_wx;
-			GLuint m_buffer_position_wy, m_buffer_index_wy;
+
+			GLuint m_vao_w;
+			GLuint m_buffer_position_w, m_buffer_index_w;
 
 			std::vector<float> m_positions;
+			std::vector<float> m_positions_w;
+
 			std::vector<uint32_t> m_indices;
+			std::vector<uint32_t> m_indices_w;
 
 			std::shared_ptr<shader_program> m_block_shader;
+			std::shared_ptr<shader_program> m_wall_shader;
 
 		public:
 			uint32_t get_heightmap_width() const;
@@ -61,7 +66,12 @@ namespace mini {
 			const glm::vec3 & get_block_size() const;
 			const glm::vec3 & get_block_position() const;
 
-			millable_block(std::shared_ptr<shader_program> shader, uint32_t width, uint32_t height);
+			millable_block(
+				std::shared_ptr<shader_program> shader, 
+				std::shared_ptr<shader_program> wall_shader,
+				uint32_t width, 
+				uint32_t height);
+
 			~millable_block();
 
 			millable_block(const millable_block&) = delete;
@@ -71,6 +81,8 @@ namespace mini {
 
 		private:
 			void m_init_buffers();
+			void m_init_wall_buffers();
+
 			void m_free_buffers();
 	};
 }
