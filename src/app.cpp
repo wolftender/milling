@@ -6,8 +6,12 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <nfd.h>
 	
 namespace mini {
+	constexpr const std::string_view app_title = "milling simulator";
+
 	float application::get_cam_yaw() const {
 		return m_cam_yaw;
 	}
@@ -41,7 +45,7 @@ namespace mini {
 	}
 
 	application::application() : 
-		app_window(1200, 800, "milling application"),
+		app_window(1200, 800, std::string(app_title)),
 		m_context(video_mode_t(1200, 800)) {
 
 		m_cam_pitch = 0.0f;
@@ -64,6 +68,7 @@ namespace mini {
 		m_store.load_shader("millable", "shaders/vs_millable.glsl", "shaders/fs_millable.glsl");
 		m_store.load_shader("millable_w", "shaders/vs_millable_w.glsl", "shaders/fs_millable_w.glsl");
 		m_store.load_shader("phong", "shaders/vs_phong.glsl", "shaders/fs_phong.glsl");
+		m_store.load_shader("line", "shaders/vs_basic.glsl", "shaders/fs_solidcolor.glsl", "shaders/gs_lines.glsl");
 
 		// objects
 		m_grid_xz = std::make_shared<grid_object>(m_store.get_shader("grid_xz"));
@@ -82,6 +87,9 @@ namespace mini {
 			m_store.get_shader("phong"),
 			0.5f,
 			*m_block.get());
+
+		m_curve = std::make_shared<curve>(m_store.get_shader("line"));
+		m_curve->set_color({1.0f, 0.0f, 0.0f, 1.0f});
 
 		// setup lights
 		auto& light = m_context.get_light(0);
@@ -139,6 +147,7 @@ namespace mini {
 
 		m_cutter->render(m_context);
 
+		m_context.draw(m_curve, glm::mat4x4(1.0f));
 		m_context.draw(m_block, block_matrix);
 		m_context.display(false, true);
 
@@ -218,16 +227,20 @@ namespace mini {
 
 		if (ImGui::BeginMenuBar()) {
 			if (ImGui::BeginMenu("File")) {
-				if (ImGui::MenuItem("New", "Ctrl + N", nullptr, true)) {
-					std::cout << "czesc nowy" << std::endl;
+				if (ImGui::MenuItem("Load Path", "Ctrl + O", nullptr, true)) {
+					m_load_path();
 				}
 
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Fajne Menu")) {
-				if (ImGui::MenuItem("Hej", "Esc", nullptr, true)) {
-					std::cout << "czesc" << std::endl;
+			if (ImGui::BeginMenu("Simulation")) {
+				if (ImGui::MenuItem("Restart Milling", "Ctrl + R", nullptr, true)) {
+					std::cout << "todo: implement" << std::endl;
+				}
+
+				if (ImGui::MenuItem("Restart Material", "Ctrl + M", nullptr, true)) {
+					std::cout << "todo: implement" << std::endl;
 				}
 
 				ImGui::EndMenu();
@@ -386,5 +399,42 @@ namespace mini {
 
 		ImGui::End();
 		ImGui::PopStyleVar(1);
+	}
+
+	void application::m_load_path() {
+		constexpr const nfdchar_t* filters = "";
+		nfdchar_t* in_path = nullptr;
+
+		nfdresult_t result = NFD_OpenDialog(filters, nullptr, &in_path);
+
+		if (result == NFD_OKAY) {
+			std::string path = std::string(in_path, strlen(in_path));
+			
+			milling_command_parser parser(path);
+			std::vector<milling_command> commands = parser.get_commands();
+			std::vector<glm::vec3> path_points;
+
+			bool parse_error = false;
+
+			for (auto& command : commands) {
+				std::visit([&](const auto& arg) {
+					using T = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<T, command_invalid>) {
+						std::cerr << "invalid command detected" << std::endl;
+						parse_error = true;
+					} else if constexpr (std::is_same_v<T, command_g01_t>) {
+						path_points.push_back(glm::vec3 { arg.x, -arg.z, arg.y } * 0.1f);
+					}
+				}, command);
+			}
+
+			m_loaded_path_url = path;
+			set_title(std::string(app_title) + " - " + m_loaded_path_url);
+
+			m_path_points = path_points;
+
+			m_curve->clear_points();
+			m_curve->append_positions(m_path_points);
+		}
 	}
 }

@@ -23,6 +23,7 @@
     <ClInclude Include="inc\billboard.hpp" />
     <ClInclude Include="inc\camera.hpp" />
     <ClInclude Include="inc\context.hpp" />
+    <ClInclude Include="inc\curve.hpp" />
     <ClInclude Include="inc\cutter.hpp" />
     <ClInclude Include="inc\grid.hpp" />
     <ClInclude Include="inc\gui.hpp" />
@@ -40,6 +41,7 @@
     <ClCompile Include="src\billboard.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\context.cpp" />
+    <ClCompile Include="src\curve.cpp" />
     <ClCompile Include="src\cutter.cpp" />
     <ClCompile Include="src\grid.cpp" />
     <ClCompile Include="src\gui.cpp" />
@@ -66,6 +68,7 @@
     <None Include="shaders\fs_phong.glsl" />
     <None Include="shaders\fs_solidcolor.glsl" />
     <None Include="shaders\fs_white.glsl" />
+    <None Include="shaders\gs_lines.glsl" />
     <None Include="shaders\vs_basic.glsl" />
     <None Include="shaders\vs_billboard.glsl" />
     <None Include="shaders\vs_billboard_s.glsl" />

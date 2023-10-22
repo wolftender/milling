@@ -6,6 +6,7 @@
 #include "parser.hpp"
 #include "millable.hpp"
 #include "cutter.hpp"
+#include "curve.hpp"
 
 namespace mini {
 	class application : public app_window {
@@ -24,9 +25,14 @@ namespace mini {
 			glm::vec3 m_camera_target;
 			offset_t m_vp_mouse_offset;
 
+			// loaded path
+			std::string m_loaded_path_url;
+			std::vector<glm::vec3> m_path_points;
+
 			// objects
 			std::shared_ptr<grid_object> m_grid_xz;
 			std::shared_ptr<millable_block> m_block;
+			std::shared_ptr<curve> m_curve;
 
 			std::unique_ptr<milling_cutter> m_cutter;
 
@@ -62,5 +68,7 @@ namespace mini {
 			void m_draw_viewport();
 			void m_draw_view_options();
 			void m_draw_scene_options();
+
+			void m_load_path();
 	};
 }
