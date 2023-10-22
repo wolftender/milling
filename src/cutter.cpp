@@ -42,14 +42,14 @@ namespace mini {
 	milling_cutter::milling_cutter(std::shared_ptr<shader_program> shader, float radius, const millable_block& block) :
 		m_mask(make_mask(radius, block)),
 		m_radius(radius),
-		m_position(0.0f, -1.5f, 0.0f) {
+		m_position(0.0f, -2.5f, 0.0f) {
 
 		m_model = std::make_shared<milling_cutter_model>(shader);
 	}
 
 	void milling_cutter::update(const float delta_time, millable_block& block) {
-		m_position.x += delta_time * 0.15f;
-		m_position.z += delta_time * 0.15f;
+		m_position.x += delta_time * 0.5f;
+		m_position.z += delta_time * 0.5f;
 
 		// calculate the offset
 		auto block_size = block.get_block_size();

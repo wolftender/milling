@@ -263,10 +263,10 @@ namespace mini {
 		for (uint32_t i = 0; i <= latitudes; ++i) {
 			latHeight = i * dLat;
 
-			if (i == 0) {
-				latHeight += dLat;
-			} else if (i == latitudes) {
-				latHeight -= dLat;
+			if (i <= 1) {
+				latHeight = 0;
+			} else if (i + 1 >= latitudes) {
+				latHeight = height;
 			}
 
 			float xy = (i == 0 || i == latitudes) ? 0 : radius;
