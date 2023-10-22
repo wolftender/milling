@@ -4,6 +4,8 @@
 #include "store.hpp"
 #include "grid.hpp"
 #include "parser.hpp"
+#include "millable.hpp"
+#include "cutter.hpp"
 
 namespace mini {
 	class application : public app_window {
@@ -24,6 +26,9 @@ namespace mini {
 
 			// objects
 			std::shared_ptr<grid_object> m_grid_xz;
+			std::shared_ptr<millable_block> m_block;
+
+			milling_cutter m_cutter;
 
 		public:
 			float get_cam_yaw() const;

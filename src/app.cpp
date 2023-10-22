@@ -61,9 +61,13 @@ namespace mini {
 		m_store.load_shader("grid_xz", "shaders/vs_grid.glsl", "shaders/fs_grid_xz.glsl");
 		m_store.load_shader("billboard", "shaders/vs_billboard.glsl", "shaders/fs_billboard.glsl");
 		m_store.load_shader("billboard_s", "shaders/vs_billboard_s.glsl", "shaders/fs_billboard.glsl");
+		m_store.load_shader("millable", "shaders/vs_millable.glsl", "shaders/fs_millable.glsl");
 
 		// objects
 		m_grid_xz = std::make_shared<grid_object>(m_store.get_shader("grid_xz"));
+		m_block = std::make_shared<millable_block>(m_store.get_shader("millable"), 1000, 1000);
+
+		m_block->set_block_size({10.0f, 4.0f, 10.0f});
 	}
 
 	void application::t_integrate(float delta_time) {
@@ -96,6 +100,8 @@ namespace mini {
 		m_context.get_camera().set_position(cam_pos);
 		m_context.get_camera().set_target(m_camera_target);
 
+		m_cutter.update(delta_time, *m_block.get());
+
 		app_window::t_integrate(delta_time);
 	}
 
@@ -105,6 +111,11 @@ namespace mini {
 			m_context.draw(m_grid_xz, glm::mat4x4(1.0f));
 		}
 
+		auto block_matrix = glm::mat4x4(1.0f);
+		block_matrix = glm::translate(block_matrix, m_block->get_block_position());
+		block_matrix = glm::scale(block_matrix, m_block->get_block_size());
+
+		m_context.draw(m_block, block_matrix);
 		m_context.display(false, true);
 
 		m_draw_main_window();

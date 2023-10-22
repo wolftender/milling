@@ -23,8 +23,10 @@
     <ClInclude Include="inc\billboard.hpp" />
     <ClInclude Include="inc\camera.hpp" />
     <ClInclude Include="inc\context.hpp" />
+    <ClInclude Include="inc\cutter.hpp" />
     <ClInclude Include="inc\grid.hpp" />
     <ClInclude Include="inc\gui.hpp" />
+    <ClInclude Include="inc\millable.hpp" />
     <ClInclude Include="inc\parser.hpp" />
     <ClInclude Include="inc\scamera.hpp" />
     <ClInclude Include="inc\shader.hpp" />
@@ -37,9 +39,11 @@
     <ClCompile Include="src\billboard.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\context.cpp" />
+    <ClCompile Include="src\cutter.cpp" />
     <ClCompile Include="src\grid.cpp" />
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\millable.cpp" />
     <ClCompile Include="src\parser.cpp" />
     <ClCompile Include="src\scamera.cpp" />
     <ClCompile Include="src\shader.cpp" />
@@ -55,12 +59,14 @@
     <None Include="shaders\fs_basic.glsl" />
     <None Include="shaders\fs_billboard.glsl" />
     <None Include="shaders\fs_grid_xz.glsl" />
+    <None Include="shaders\fs_millable.glsl" />
     <None Include="shaders\fs_solidcolor.glsl" />
     <None Include="shaders\fs_white.glsl" />
     <None Include="shaders\vs_basic.glsl" />
     <None Include="shaders\vs_billboard.glsl" />
     <None Include="shaders\vs_billboard_s.glsl" />
     <None Include="shaders\vs_grid.glsl" />
+    <None Include="shaders\vs_millable.glsl" />
     <None Include="shaders\vs_pass.glsl" />
     <None Include="shaders\vs_position.glsl" />
     <None Include="shaders\vs_sprite.glsl" />
