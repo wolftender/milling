@@ -132,7 +132,7 @@ namespace mini {
 		m_context.get_camera().set_target(m_camera_target);
 
 		if (m_cutter) {
-			m_cutter->update(delta_time, *m_block.get());
+			m_cutter->update(10.0f * delta_time, *m_block.get());
 		}
 
 		app_window::t_integrate(delta_time);
@@ -477,7 +477,7 @@ namespace mini {
 			m_cutter = std::make_unique<milling_cutter>(
 				m_store.get_shader("phong"),
 				m_path_points,
-				static_cast<float>(radius) * 0.1f,
+				static_cast<float>(radius) * 0.1f * 0.5f,
 				spherical,
 				*m_block.get());
 		}

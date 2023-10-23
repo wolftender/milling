@@ -65,26 +65,28 @@ namespace mini {
 	void milling_cutter::update(const float delta_time, millable_block& block) {
 		m_interpolation_time += delta_time;
 
-		if (m_current_point < m_path_points.size()) {
-			auto pos_start = m_path_points[m_current_point];
-			auto pos_end = m_path_points[m_current_point + 1];
+		if (m_current_point < m_path_points.size() - 1) {
+			const float step = 0.1f;
 
-			float len = glm::distance(pos_start, pos_end);
-			float t = m_interpolation_time / len;
+			while (m_current_point < m_path_points.size() - 1) {
+				auto pos_start = m_path_points[m_current_point];
+				auto pos_end = m_path_points[m_current_point + 1];
 
-			if (t > 1.0f) {
-				m_interpolation_time = 0.0f;
-				m_current_point++;
+				float len = glm::distance(pos_start, pos_end);
+				float t = m_interpolation_time / len;
 
-				t = 1.0f;
+				auto pos_current = glm::mix(pos_start, pos_end, glm::min(1.0f, t));
+
+				m_position = pos_current;
+				m_carve(block);
+
+				if (t > 1.0f) {
+					m_interpolation_time -= len;
+					m_current_point++;
+				} else {
+					break;
+				}
 			}
-
-			auto pos_previous = m_position;
-			auto pos_current = glm::mix(pos_start, pos_end, t);
-
-			m_position = pos_current;
-
-			m_carve(block);
 		} else {
 			m_position = m_path_points.back();
 		}
