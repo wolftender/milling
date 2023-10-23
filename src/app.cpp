@@ -405,6 +405,12 @@ namespace mini {
 			gui::prefix_label("Show Curves: ", 250.0f);
 			ImGui::Checkbox("##milling_showcurve", &m_curve_enabled);
 
+			if (ImGui::Button("Complete Instantly")) {
+				if (m_cutter && m_block) {
+					m_cutter->instant(*m_block.get());
+				}
+			}
+
 			ImGui::NewLine();
 		}
 

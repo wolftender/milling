@@ -49,6 +49,8 @@ namespace mini {
 			void update(const float delta_time, millable_block& block);
 			void render(app_context& context);
 
+			void instant(millable_block& block);
+
 		private:
 			void m_carve(millable_block& block, bool silent) const;
 	};

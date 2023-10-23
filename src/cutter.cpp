@@ -75,7 +75,7 @@ namespace mini {
 		m_interpolation_time += delta_time;
 
 		if (m_current_point < m_path_points.size() - 1) {
-			const float step = m_radius * 0.05f;
+			const float step = m_radius * 0.025f;
 
 			while (m_current_point < m_path_points.size() - 1) {
 				auto pos_start = m_path_points[m_current_point];
@@ -117,6 +117,37 @@ namespace mini {
 		world = glm::rotate(world, 0.5f * glm::pi<float>(), glm::vec3{ 1.0f, 0.0f, 0.0f });
 
 		context.draw(m_model, world);
+	}
+
+	void milling_cutter::instant(millable_block& block) {
+		const float step = m_radius * 0.025f;
+
+		while (m_current_point < m_path_points.size() - 1) {
+			std::cout << "complete paths " << m_current_point << " out of " << m_path_points.size() - 1 << std::endl;
+
+			auto pos_start = m_path_points[m_current_point];
+			auto pos_end = m_path_points[m_current_point + 1];
+
+			float len = glm::distance(pos_start, pos_end);
+			float t = 1.0f, m = 1.0f;
+
+			float s = step / len;
+
+			while (m > s) {
+				m = m - s;
+
+				m_position = glm::mix(pos_start, pos_end, glm::min(1.0f, t - m));
+				m_carve(block, true);
+			}
+
+			m_position = glm::mix(pos_start, pos_end, glm::min(1.0f, t));
+			m_carve(block, true);
+
+			m_current_point++;
+		}
+
+		block.refresh_texture();
+		m_position = m_path_points.back();
 	}
 
 	void milling_cutter::m_carve(millable_block& block, bool silent) const {
