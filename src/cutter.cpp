@@ -73,11 +73,15 @@ namespace mini {
 			float t = m_interpolation_time / len;
 
 			if (t > 1.0f) {
-				m_interpolation_time -= len;
+				m_interpolation_time = 0.0f;
 				m_current_point++;
+
+				t = 1.0f;
 			}
 
+			auto pos_previous = m_position;
 			auto pos_current = glm::mix(pos_start, pos_end, t);
+
 			m_position = pos_current;
 
 			m_carve(block);
