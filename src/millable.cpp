@@ -1,4 +1,5 @@
 #include "millable.hpp"
+#include <iostream>
 
 namespace mini {
 	uint32_t millable_block::get_heightmap_width() const {
@@ -31,15 +32,6 @@ namespace mini {
 		int32_t end_offset_x = 0;
 		int32_t end_offset_y = 0;
 
-		// cutter out of bounds
-		if (offset_x + mask.width < 0 ||
-			offset_y + mask.height < 0 ||
-			offset_x >= m_heightmap_width ||
-			offset_y >= m_heightmap_height) {
-
-			return true;
-		}
-
 		if (offset_x < 0) {
 			start_offset_x = -offset_x;
 		}
@@ -58,6 +50,11 @@ namespace mini {
 
 		int32_t subdata_width = mask.width - start_offset_x - end_offset_x;
 		int32_t subdata_height = mask.height - start_offset_y - end_offset_y;
+
+		// out of bounds
+		if (subdata_width * subdata_height < 0) {
+			return true;
+		}
 
 		subdata.resize(subdata_width * subdata_height);
 

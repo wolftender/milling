@@ -47,20 +47,56 @@ namespace mini {
 
 	milling_cutter::milling_cutter(
 		std::shared_ptr<shader_program> shader, 
+		std::vector<glm::vec3> path_points,
 		float radius, 
 		bool spherical, 
 		const millable_block& block) :
 
 		m_mask(make_mask(radius, spherical, block)),
 		m_radius(radius),
+		m_path_points(path_points),
+		m_interpolation_time(0.0f),
+		m_current_point(0),
 		m_position(0.0f, -2.5f, 0.0f) {
 
 		m_model = std::make_shared<milling_cutter_model>(shader);
 	}
 
 	void milling_cutter::update(const float delta_time, millable_block& block) {
-		m_position.z += delta_time * 0.5f;
+		m_interpolation_time += delta_time;
 
+		if (m_current_point < m_path_points.size()) {
+			auto pos_start = m_path_points[m_current_point];
+			auto pos_end = m_path_points[m_current_point + 1];
+
+			float len = glm::distance(pos_start, pos_end);
+			float t = m_interpolation_time / len;
+
+			if (t > 1.0f) {
+				m_interpolation_time -= len;
+				m_current_point++;
+			}
+
+			auto pos_current = glm::mix(pos_start, pos_end, t);
+			m_position = pos_current;
+
+			m_carve(block);
+		} else {
+			m_position = m_path_points.back();
+		}
+	}
+
+	void milling_cutter::render(app_context& context) {
+		auto world = glm::mat4x4(1.0f);
+
+		world = glm::translate(world, m_position);
+		world = glm::scale(world, glm::vec3{ m_radius, 1.0f, m_radius });
+		world = glm::rotate(world, 0.5f * glm::pi<float>(), glm::vec3{ 1.0f, 0.0f, 0.0f });
+
+		context.draw(m_model, world);
+	}
+
+	void milling_cutter::m_carve(millable_block& block) const {
 		// calculate the offset
 		auto block_size = block.get_block_size();
 		float unit_size_x = block_size.x / block.get_heightmap_width();
@@ -78,16 +114,6 @@ namespace mini {
 
 		float height = (m_position.y - block_position.y) / block_size.y;
 		block.carve(m_mask, offset_x, offset_y, height, 0.0f);
-	}
-
-	void milling_cutter::render(app_context& context) {
-		auto world = glm::mat4x4(1.0f);
-
-		world = glm::translate(world, m_position);
-		world = glm::scale(world, glm::vec3{ m_radius, 1.0f, m_radius });
-		world = glm::rotate(world, 0.5f * glm::pi<float>(), glm::vec3{ 1.0f, 0.0f, 0.0f });
-
-		context.draw(m_model, world);
 	}
 
 	milling_cutter_model::milling_cutter_model(std::shared_ptr<shader_program> shader) {

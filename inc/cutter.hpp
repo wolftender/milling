@@ -24,12 +24,18 @@ namespace mini {
 			std::shared_ptr<milling_cutter_model> m_model;
 			millable_block::milling_mask_t m_mask;
 
+			std::vector<glm::vec3> m_path_points;
+
 			glm::vec3 m_position;
 			float m_radius;
+
+			float m_interpolation_time;
+			int m_current_point;
 			
 		public:
 			milling_cutter(
 				std::shared_ptr<shader_program> shader, 
+				std::vector<glm::vec3> path_points,
 				float radius, 
 				bool spherical, 
 				const millable_block& block);
@@ -38,5 +44,8 @@ namespace mini {
 
 			void update(const float delta_time, millable_block& block);
 			void render(app_context& context);
+
+		private:
+			void m_carve(millable_block& block) const;
 	};
 }

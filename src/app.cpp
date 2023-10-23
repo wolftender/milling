@@ -77,17 +77,17 @@ namespace mini {
 		m_block = std::make_shared<millable_block>(
 			m_store.get_shader("millable"), 
 			m_store.get_shader("millable_w"), 
-			1000, 
-			1000);
+			1200, 
+			1200);
 
-		m_block->set_block_size({15.0f, 4.0f, 10.0f});
+		m_block->set_block_size({18.0f, 5.0f, 18.0f});
 
 		// create cutter
-		m_cutter = std::make_unique<milling_cutter>(
+		/*m_cutter = std::make_unique<milling_cutter>(
 			m_store.get_shader("phong"),
 			0.5f,
 			true,
-			*m_block.get());
+			*m_block.get());*/
 
 		m_curve = std::make_shared<curve>(m_store.get_shader("line"));
 		m_curve->set_color({1.0f, 0.0f, 0.0f, 1.0f});
@@ -115,7 +115,7 @@ namespace mini {
 			m_cam_yaw = m_cam_yaw + pi2;
 		}
 
-		gui::clamp(m_distance, 1.0f, 20.0f);
+		gui::clamp(m_distance, 1.0f, 30.0f);
 		gui::clamp(m_grid_spacing, 0.05f, 10.0f);
 
 		// setup camera for the scene
@@ -131,7 +131,9 @@ namespace mini {
 		m_context.get_camera().set_position(cam_pos);
 		m_context.get_camera().set_target(m_camera_target);
 
-		m_cutter->update(delta_time, *m_block.get());
+		if (m_cutter) {
+			m_cutter->update(delta_time, *m_block.get());
+		}
 
 		app_window::t_integrate(delta_time);
 	}
@@ -146,7 +148,9 @@ namespace mini {
 		block_matrix = glm::translate(block_matrix, m_block->get_block_position());
 		block_matrix = glm::scale(block_matrix, m_block->get_block_size());
 
-		m_cutter->render(m_context);
+		if (m_cutter) {
+			m_cutter->render(m_context);
+		}
 
 		m_context.draw(m_curve, glm::mat4x4(1.0f));
 		m_context.draw(m_block, block_matrix);
@@ -410,6 +414,39 @@ namespace mini {
 
 		if (result == NFD_OKAY) {
 			std::string path = std::string(in_path, strlen(in_path));
+
+			if (path.size() < 4) {
+				std::cerr << "invalid file name" << std::endl;
+				return;
+			}
+
+			auto ext = path.substr(path.size() - 4);
+			if (ext[0] != '.') {
+				std::cerr << "invalid file name, please use .fXX or .kXX" << std::endl;
+				return;
+			}
+
+			bool spherical = false;
+			if (ext[1] == 'f') {
+				spherical = false;
+			} else if (ext[1] == 'k') {
+				spherical = true;
+			} else {
+				std::cerr << "invalid cutter name \'" << ext[1] << "\'" << std::endl;
+				return;
+			}
+
+			int radius = 0;
+			char d0 = ext[2] - '0';
+			char d1 = ext[3] - '0';
+
+			if (d0 < 0 || d1 < 0 || d0 > 9 || d1 > 9) {
+				std::cerr << "invalid cutter radius \'" << ext[2] << ext[3] << "\'" << std::endl;
+				return;
+			}
+
+			radius = d0 * 10 + d1;
+			std::cout << "loaded cutter data, is sphere: " << spherical << ", radius: " << radius << std::endl;
 			
 			milling_command_parser parser(path);
 			std::vector<milling_command> commands = parser.get_commands();
@@ -436,6 +473,13 @@ namespace mini {
 
 			m_curve->clear_points();
 			m_curve->append_positions(m_path_points);
+
+			m_cutter = std::make_unique<milling_cutter>(
+				m_store.get_shader("phong"),
+				m_path_points,
+				static_cast<float>(radius) * 0.1f,
+				spherical,
+				*m_block.get());
 		}
 	}
 }
