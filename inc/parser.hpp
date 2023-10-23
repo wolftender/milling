@@ -5,6 +5,7 @@
 #include <optional>
 #include <functional>
 #include <unordered_map>
+#include <cstdint>
 
 ///
 /// Example usage
