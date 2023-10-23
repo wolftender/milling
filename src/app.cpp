@@ -98,7 +98,7 @@ namespace mini {
 		light.position = { 0.0f, 8.0f, 8.0f };
 		light.intensity = 0.8f;
 		light.att_sq = 0.0f;
-		light.att_lin = 0.1f;
+		light.att_lin = 0.02f;
 	}
 
 	void application::t_integrate(float delta_time) {

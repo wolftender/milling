@@ -69,17 +69,36 @@ void main () {
     vec2 texel_size = 1.0 / vec2(textureSize(u_heightmap, 0));
     vec2 uv = mv_local_pos.xz + 0.5;
 
-    float s11 = texture(u_heightmap, uv).r;
-	float s01 = texture(u_heightmap, uv + offset.xy * 4.0 * texel_size).r;
-	float s21 = texture(u_heightmap, uv + offset.zy * 4.0 * texel_size).r;
-	float s10 = texture(u_heightmap, uv + offset.yx * 4.0 * texel_size).r;
-	float s12 = texture(u_heightmap, uv + offset.yz * 4.0 * texel_size).r;
+    const vec2 d1 = vec2(1.0, 0.0);
+    const vec2 d2 = vec2(0.0, 1.0);
+    const vec2 d3 = vec2(-1.0, 0.0);
+    const vec2 d4 = vec2(0.0, -1.0);
 
-    vec3 va = normalize (vec3 (size.xy, multiplier * (s21 - s01)));
-	vec3 vb = normalize (vec3 (size.yx, multiplier * (s12 - s10)));
-	vec3 tn = normalize (cross (va, vb));
+    float s = texture(u_heightmap, uv).r;
+	float s1 = texture(u_heightmap, uv + 4.0 * d1 * texel_size).r;
+	float s2 = texture(u_heightmap, uv + 4.0 * d2 * texel_size).r;
+	float s3 = texture(u_heightmap, uv + 4.0 * d3 * texel_size).r;
+	float s4 = texture(u_heightmap, uv + 4.0 * d4 * texel_size).r;
 
-	vec3 normal = normalmapping(vec3(0.0, -1.0, 0.0), vec3(1.0, 0.0, 0.0), tn);
+    vec3 p = vec3(0.0, s * 100.0, 0.0);
+    vec3 p1 = vec3(d1.x, s1 * 100.0, d1.y);
+    vec3 p2 = vec3(d2.x, s2 * 100.0, d2.y);
+    vec3 p3 = vec3(d3.x, s3 * 100.0, d3.y);
+    vec3 p4 = vec3(d4.x, s4 * 100.0, d4.y);
+
+    vec3 v1 = p1 - p;
+    vec3 v2 = p2 - p;
+    vec3 v3 = p3 - p;
+    vec3 v4 = p4 - p;
+
+    vec3 n1 = cross(v2, v1);
+    vec3 n2 = cross(v3, v2);
+    vec3 n3 = cross(v4, v3);
+    vec3 n4 = cross(v1, v4);
+
+	vec3 tn = normalize(n1 + n2 + n3 + n4);
+
+	vec3 normal = vec3(-tn.z, tn.y, tn.x);
     float height = texture(u_heightmap, uv).r;
 
     vec4 phong_component = vec4 (0.0f);
@@ -108,4 +127,5 @@ void main () {
     vec3 final_color = (1.0 - u_surface_color) * gr_color + (1.0 - gr_color) * u_surface_color;
 
     output_color = gamma_correct (vec4 (u_ambient * final_color, 1.0) + phong_component, u_gamma);
+    //output_color = vec4(normal, 1.0);
 }
