@@ -59,6 +59,15 @@ namespace mini {
 				float depth, 
 				float max_height);
 
+			bool carve_silent(
+				const milling_mask_t& mask,
+				int32_t offset_x,
+				int32_t offset_y,
+				float depth,
+				float max_height);
+
+			void refresh_texture();
+
 			void set_block_dimensions(uint32_t width, uint32_t height);
 
 			void set_block_size(const glm::vec3 & scale);

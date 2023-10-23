@@ -75,10 +75,10 @@ void main () {
     const vec2 d4 = vec2(0.0, -1.0);
 
     float s = texture(u_heightmap, uv).r;
-	float s1 = texture(u_heightmap, uv + 4.0 * d1 * texel_size).r;
-	float s2 = texture(u_heightmap, uv + 4.0 * d2 * texel_size).r;
-	float s3 = texture(u_heightmap, uv + 4.0 * d3 * texel_size).r;
-	float s4 = texture(u_heightmap, uv + 4.0 * d4 * texel_size).r;
+	float s1 = texture(u_heightmap, uv + 2.0 * d1 * texel_size).r;
+	float s2 = texture(u_heightmap, uv + 2.0 * d2 * texel_size).r;
+	float s3 = texture(u_heightmap, uv + 2.0 * d3 * texel_size).r;
+	float s4 = texture(u_heightmap, uv + 2.0 * d4 * texel_size).r;
 
     vec3 p = vec3(0.0, s * 100.0, 0.0);
     vec3 p1 = vec3(d1.x, s1 * 100.0, d1.y);

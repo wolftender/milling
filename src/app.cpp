@@ -48,12 +48,18 @@ namespace mini {
 		app_window(1200, 800, std::string(app_title)),
 		m_context(video_mode_t(1200, 800)) {
 
-		m_cam_pitch = 0.0f;
-		m_cam_yaw = 0.0f;
-		m_distance = 10.0f;
+		m_block_size = { 18.0f, 5.0f, 18.0f };
+		m_block_div_x = 1200;
+		m_block_div_y = 1200;
+
+		m_cam_pitch = -0.488f;
+		m_cam_yaw = 3.150f;
+		m_distance = 20.0f;
 		m_time = 0.0f;
+		m_milling_speed = 1.0f;
 		m_grid_spacing = 1.0f;
 		m_grid_enabled = true;
+		m_curve_enabled = true;
 		m_viewport_focus = false;
 		m_mouse_in_viewport = false;
 		m_last_vp_height = m_last_vp_width = 0;
@@ -77,10 +83,10 @@ namespace mini {
 		m_block = std::make_shared<millable_block>(
 			m_store.get_shader("millable"), 
 			m_store.get_shader("millable_w"), 
-			1200, 
-			1200);
+			m_block_div_x, 
+			m_block_div_y);
 
-		m_block->set_block_size({18.0f, 5.0f, 18.0f});
+		m_block->set_block_size(m_block_size);
 
 		// create cutter
 		/*m_cutter = std::make_unique<milling_cutter>(
@@ -117,6 +123,7 @@ namespace mini {
 
 		gui::clamp(m_distance, 1.0f, 30.0f);
 		gui::clamp(m_grid_spacing, 0.05f, 10.0f);
+		gui::clamp(m_milling_speed, 0.1f, 10.0f);
 
 		// setup camera for the scene
 		glm::vec4 cam_pos = { 0.0f, 0.0f, -m_distance, 1.0f };
@@ -132,7 +139,7 @@ namespace mini {
 		m_context.get_camera().set_target(m_camera_target);
 
 		if (m_cutter) {
-			m_cutter->update(10.0f * delta_time, *m_block.get());
+			m_cutter->update(m_milling_speed * delta_time, *m_block.get());
 		}
 
 		app_window::t_integrate(delta_time);
@@ -152,14 +159,17 @@ namespace mini {
 			m_cutter->render(m_context);
 		}
 
-		m_context.draw(m_curve, glm::mat4x4(1.0f));
+		if (m_curve_enabled) {
+			m_context.draw(m_curve, glm::mat4x4(1.0f));
+		}
+
 		m_context.draw(m_block, block_matrix);
 		m_context.display(false, true);
 
 		m_draw_main_window();
 		m_draw_viewport();
 		m_draw_view_options();
-		m_draw_scene_options();
+		m_draw_milling_options();
 	}
 
 	void application::t_on_character(unsigned int code) {
@@ -241,11 +251,11 @@ namespace mini {
 
 			if (ImGui::BeginMenu("Simulation")) {
 				if (ImGui::MenuItem("Restart Milling", "Ctrl + R", nullptr, true)) {
-					std::cout << "todo: implement" << std::endl;
+					m_restart_path();
 				}
 
 				if (ImGui::MenuItem("Restart Material", "Ctrl + M", nullptr, true)) {
-					std::cout << "todo: implement" << std::endl;
+					m_restart_block();
 				}
 
 				ImGui::EndMenu();
@@ -293,11 +303,11 @@ namespace mini {
 			ImGui::DockBuilderSetNodeSize(dockspace_id, ImVec2(vp_width, vp_height));
 
 			auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.25f, nullptr, &dockspace_id);
-			auto dock_id_left_bottom = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.45f, nullptr, &dock_id_left);
+			auto dock_id_left_bottom = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.65f, nullptr, &dock_id_left);
 
 			ImGui::DockBuilderDockWindow("Viewport", dockspace_id);
 			ImGui::DockBuilderDockWindow("View Options", dock_id_left);
-			ImGui::DockBuilderDockWindow("Scene Options", dock_id_left_bottom);
+			ImGui::DockBuilderDockWindow("Milling Options", dock_id_left_bottom);
 
 			ImGui::DockBuilderFinish(dockspace_id);
 		}
@@ -381,24 +391,36 @@ namespace mini {
 		ImGui::PopStyleVar(1);
 	}
 
-	void application::m_draw_scene_options() {
+	void application::m_draw_milling_options() {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(270, 450));
-		ImGui::Begin("Scene Options", NULL);
+		ImGui::Begin("Milling Options", NULL);
 		ImGui::SetWindowPos(ImVec2(30, 30), ImGuiCond_Once);
 		ImGui::SetWindowSize(ImVec2(270, 450), ImGuiCond_Once);
 
 		// render controls
-		if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
-			gui::prefix_label("Cam. Pitch: ", 250.0f);
-			ImGui::InputFloat("##pitch", &m_cam_pitch);
+		if (ImGui::CollapsingHeader("Milling Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+			gui::prefix_label("Milling Speed: ", 250.0f);
+			ImGui::InputFloat("##milling_speed", &m_milling_speed);
 
-			gui::prefix_label("Cam. Yaw: ", 250.0f);
-			ImGui::InputFloat("##yaw", &m_cam_yaw);
+			gui::prefix_label("Show Curves: ", 250.0f);
+			ImGui::Checkbox("##milling_showcurve", &m_curve_enabled);
 
-			gui::prefix_label("Cam. Dist: ", 250.0f);
-			ImGui::InputFloat("##distance", &m_distance);
+			ImGui::NewLine();
+		}
 
-			gui::vector_editor("Cam. Target", m_camera_target);
+		if (ImGui::CollapsingHeader("Material Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+			gui::prefix_label("Divisions U: ", 250.0f);
+			ImGui::InputInt("##milling_div_u", &m_block_div_x);
+
+			gui::prefix_label("Divisions V: ", 250.0f);
+			ImGui::InputInt("##milling_div_v", &m_block_div_y);
+
+			gui::vector_editor("Block Dimensions: ", m_block_size);
+
+			if (ImGui::Button("Apply Settings")) {
+				m_restart_block();
+			}
+
 			ImGui::NewLine();
 		}
 
@@ -461,7 +483,7 @@ namespace mini {
 						std::cerr << "invalid command detected" << std::endl;
 						parse_error = true;
 					} else if constexpr (std::is_same_v<T, command_g01_t>) {
-						path_points.push_back(glm::vec3 { arg.x, -arg.z, arg.y } * 0.1f);
+						path_points.push_back(glm::vec3 { -arg.x, -arg.z, arg.y } * 0.1f);
 					}
 				}, command);
 			}
@@ -481,5 +503,39 @@ namespace mini {
 				spherical,
 				*m_block.get());
 		}
+	}
+
+	void application::m_restart_path() {
+		if (m_cutter && m_path_points.size() > 0) {
+			auto radius = m_cutter->get_radius();
+			auto spherical = m_cutter->is_spherical();
+
+			m_cutter = std::make_unique<milling_cutter>(
+				m_store.get_shader("phong"),
+				m_path_points,
+				radius,
+				spherical,
+				*m_block.get());
+		}
+	}
+
+	void application::m_restart_block() {
+		gui::clamp(m_block_div_x, 500, 1500);
+		gui::clamp(m_block_div_y, 500, 1500);
+
+		gui::clamp(m_block_size.x, 1.0f, 20.0f);
+		gui::clamp(m_block_size.y, 1.0f, 20.0f);
+		gui::clamp(m_block_size.z, 1.0f, 20.0f);
+
+		m_block.reset();
+		m_block = std::make_shared<millable_block>(
+			m_store.get_shader("millable"),
+			m_store.get_shader("millable_w"),
+			m_block_div_x,
+			m_block_div_y);
+
+		m_block->set_block_size(m_block_size);
+
+		m_restart_path();
 	}
 }

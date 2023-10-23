@@ -28,6 +28,7 @@ namespace mini {
 
 			glm::vec3 m_position;
 			float m_radius;
+			bool m_spherical;
 
 			float m_interpolation_time;
 			int m_current_point;
@@ -42,10 +43,13 @@ namespace mini {
 
 			~milling_cutter() = default;
 
+			float get_radius() const;
+			bool is_spherical() const;
+
 			void update(const float delta_time, millable_block& block);
 			void render(app_context& context);
 
 		private:
-			void m_carve(millable_block& block) const;
+			void m_carve(millable_block& block, bool silent) const;
 	};
 }

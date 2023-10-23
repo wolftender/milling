@@ -18,9 +18,16 @@ namespace mini {
 			float m_time;
 			float m_grid_spacing;
 			bool m_grid_enabled;
+			bool m_curve_enabled;
+
+			float m_milling_speed;
 
 			int m_last_vp_width, m_last_vp_height;
 			bool m_viewport_focus, m_mouse_in_viewport;
+
+			glm::vec3 m_block_size;
+			int m_block_div_x;
+			int m_block_div_y;
 
 			glm::vec3 m_camera_target;
 			offset_t m_vp_mouse_offset;
@@ -67,8 +74,10 @@ namespace mini {
 			void m_draw_main_window();
 			void m_draw_viewport();
 			void m_draw_view_options();
-			void m_draw_scene_options();
+			void m_draw_milling_options();
 
 			void m_load_path();
+			void m_restart_path();
+			void m_restart_block();
 	};
 }

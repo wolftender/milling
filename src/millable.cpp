@@ -98,6 +98,69 @@ namespace mini {
 		return true;
 	}
 
+	bool millable_block::carve_silent(const milling_mask_t& mask, int32_t offset_x, int32_t offset_y, float depth, float max_height) {
+		int32_t start_offset_x = 0;
+		int32_t start_offset_y = 0;
+		int32_t end_offset_x = 0;
+		int32_t end_offset_y = 0;
+
+		if (offset_x < 0) {
+			start_offset_x = -offset_x;
+		}
+
+		if (offset_x + mask.width >= m_heightmap_width) {
+			end_offset_x = mask.width - (m_heightmap_width - offset_x);
+		}
+
+		if (offset_y < 0) {
+			start_offset_y = -offset_y;
+		}
+
+		if (offset_y + mask.height >= m_heightmap_height) {
+			end_offset_y = mask.height - (m_heightmap_height - offset_y);
+		}
+
+		int32_t subdata_width = mask.width - start_offset_x - end_offset_x;
+		int32_t subdata_height = mask.height - start_offset_y - end_offset_y;
+
+		// out of bounds
+		if (subdata_width * subdata_height < 0 || subdata_width > mask.width || subdata_height > mask.height) {
+			return true;
+		}
+
+		for (int32_t cx = 0; cx < subdata_width; ++cx) {
+			for (int32_t cy = 0; cy < subdata_height; ++cy) {
+				int32_t rx = start_offset_x + cx;
+				int32_t ry = start_offset_y + cy;
+
+				std::size_t subdata_index = subdata_width * cy + cx;
+				std::size_t mask_index = mask.width * ry + rx;
+				std::size_t hm_index = m_heightmap_width * (ry + offset_y) + rx + offset_x;
+
+				float mask_val = mask.mask[mask_index];
+				float hm_val = m_heightmap[hm_index];
+
+				if (mask_val - depth < hm_val) {
+					m_heightmap[hm_index] = glm::max(mask_val - depth, 0.0f);
+				}
+			}
+		}
+	}
+
+	void millable_block::refresh_texture() {
+		if (m_texture) {
+			glBindTexture(GL_TEXTURE_2D, m_texture);
+			glTexSubImage2D(
+				GL_TEXTURE_2D,
+				0, 0, 0, m_heightmap_width, m_heightmap_height,
+				GL_RED,
+				GL_FLOAT,
+				m_heightmap.data());
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+	}
+
 	void millable_block::set_block_dimensions(uint32_t width, uint32_t height) {
 		m_block_width = width;
 		m_block_height = height;

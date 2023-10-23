@@ -57,16 +57,25 @@ namespace mini {
 		m_path_points(path_points),
 		m_interpolation_time(0.0f),
 		m_current_point(0),
+		m_spherical(spherical),
 		m_position(0.0f, -2.5f, 0.0f) {
 
 		m_model = std::make_shared<milling_cutter_model>(shader);
+	}
+
+	float milling_cutter::get_radius() const {
+		return m_radius;
+	}
+
+	bool milling_cutter::is_spherical() const {
+		return m_spherical;
 	}
 
 	void milling_cutter::update(const float delta_time, millable_block& block) {
 		m_interpolation_time += delta_time;
 
 		if (m_current_point < m_path_points.size() - 1) {
-			const float step = 0.1f;
+			const float step = m_radius * 0.05f;
 
 			while (m_current_point < m_path_points.size() - 1) {
 				auto pos_start = m_path_points[m_current_point];
@@ -75,10 +84,16 @@ namespace mini {
 				float len = glm::distance(pos_start, pos_end);
 				float t = m_interpolation_time / len;
 
-				auto pos_current = glm::mix(pos_start, pos_end, glm::min(1.0f, t));
+				float m = glm::min(1.0f, t);
+				while (m > step) {
+					m = m - step;
 
-				m_position = pos_current;
-				m_carve(block);
+					m_position = glm::mix(pos_start, pos_end, glm::min(1.0f, t - m));
+					m_carve(block, true);
+				}
+
+				m_position = glm::mix(pos_start, pos_end, glm::min(1.0f, t));
+				m_carve(block, true);
 
 				if (t > 1.0f) {
 					m_interpolation_time -= len;
@@ -87,6 +102,8 @@ namespace mini {
 					break;
 				}
 			}
+
+			block.refresh_texture();
 		} else {
 			m_position = m_path_points.back();
 		}
@@ -102,7 +119,7 @@ namespace mini {
 		context.draw(m_model, world);
 	}
 
-	void milling_cutter::m_carve(millable_block& block) const {
+	void milling_cutter::m_carve(millable_block& block, bool silent) const {
 		// calculate the offset
 		auto block_size = block.get_block_size();
 		float unit_size_x = block_size.x / block.get_heightmap_width();
@@ -119,7 +136,12 @@ namespace mini {
 		int32_t offset_y = static_cast<int32_t>(relative_y / unit_size_y);
 
 		float height = (m_position.y - block_position.y) / block_size.y;
-		block.carve(m_mask, offset_x, offset_y, height, 0.0f);
+		
+		if (silent) {
+			block.carve_silent(m_mask, offset_x, offset_y, height, 0.0f);
+		} else {
+			block.carve(m_mask, offset_x, offset_y, height, 0.0f);
+		}
 	}
 
 	milling_cutter_model::milling_cutter_model(std::shared_ptr<shader_program> shader) {
