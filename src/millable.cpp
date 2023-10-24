@@ -98,7 +98,14 @@ namespace mini {
 		return true;
 	}
 
-	bool millable_block::carve_silent(const milling_mask_t& mask, int32_t offset_x, int32_t offset_y, float depth, float max_height) {
+	void millable_block::carve_silent(
+		const milling_mask_t& mask, 
+		int32_t offset_x, 
+		int32_t offset_y, 
+		float depth, 
+		float max_height,
+		millable_block::milling_result_t& result) {
+
 		int32_t start_offset_x = 0;
 		int32_t start_offset_y = 0;
 		int32_t end_offset_x = 0;
@@ -125,8 +132,10 @@ namespace mini {
 
 		// out of bounds
 		if (subdata_width * subdata_height < 0 || subdata_width > mask.width || subdata_height > mask.height) {
-			return true;
+			return;
 		}
+
+		bool collides = false;
 
 		for (int32_t cx = 0; cx < subdata_width; ++cx) {
 			for (int32_t cy = 0; cy < subdata_height; ++cy) {
@@ -140,8 +149,15 @@ namespace mini {
 				float mask_val = mask.mask[mask_index];
 				float hm_val = m_heightmap[hm_index];
 
+				if (mask_val - depth + max_height < hm_val) {
+					result.collision_error = true;
+				}
+
 				if (mask_val - depth < hm_val) {
 					m_heightmap[hm_index] = glm::max(mask_val - depth, 0.0f);
+
+					result.depth_error = result.depth_error || (m_heightmap[hm_index] < m_min_height);
+					result.was_milled = true;
 				}
 			}
 		}
@@ -191,7 +207,8 @@ namespace mini {
 		std::shared_ptr<shader_program> shader, 
 		std::shared_ptr<shader_program> wall_shader, 
 		uint32_t width, 
-		uint32_t height) :
+		uint32_t height,
+		float min_height) :
 
 		m_vao(0), 
 		m_buffer_index(0), 
@@ -208,7 +225,8 @@ namespace mini {
 		m_block_shader(shader),
 		m_wall_shader(wall_shader),
 		m_block_dimensions(1.0f),
-		m_block_translation(0.0f) {
+		m_block_translation(0.0f),
+		m_min_height(min_height) {
 
 		m_init_buffers();
 	}

@@ -17,6 +17,9 @@ namespace mini {
 			float m_cam_yaw, m_cam_pitch, m_distance;
 			float m_time;
 			float m_grid_spacing;
+			float m_blade_height;
+			float m_block_min;
+
 			bool m_grid_enabled;
 			bool m_curve_enabled;
 

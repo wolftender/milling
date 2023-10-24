@@ -9,8 +9,10 @@ namespace mini {
 			std::unique_ptr<triangle_mesh> m_mesh;
 			std::shared_ptr<shader_program> m_shader;
 
+			float m_blade_height;
+
 		public:
-			milling_cutter_model(std::shared_ptr<shader_program> shader);
+			milling_cutter_model(std::shared_ptr<shader_program> shader, float blade_height);
 			~milling_cutter_model();
 
 			milling_cutter_model(const milling_cutter_model&) = delete;
@@ -31,7 +33,14 @@ namespace mini {
 			bool m_spherical;
 
 			float m_interpolation_time;
+			float m_blade_height;
+
 			int m_current_point;
+
+			// error flags for path segment
+			bool m_collision_reported;
+			bool m_depth_reported;
+			bool m_flat_reported;
 			
 		public:
 			milling_cutter(
@@ -39,6 +48,7 @@ namespace mini {
 				std::vector<glm::vec3> path_points,
 				float radius, 
 				bool spherical, 
+				float blade_height,
 				const millable_block& block);
 
 			~milling_cutter() = default;
@@ -52,6 +62,6 @@ namespace mini {
 			void instant(millable_block& block);
 
 		private:
-			void m_carve(millable_block& block, bool silent) const;
+			void m_carve(millable_block& block, bool silent, bool vertical);
 	};
 }

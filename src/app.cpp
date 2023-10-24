@@ -48,9 +48,11 @@ namespace mini {
 		app_window(1200, 800, std::string(app_title)),
 		m_context(video_mode_t(1200, 800)) {
 
+		m_block_min = 1.0f;
 		m_block_size = { 18.0f, 5.0f, 18.0f };
 		m_block_div_x = 1200;
 		m_block_div_y = 1200;
+		m_blade_height = 3.0f;
 
 		m_cam_pitch = -0.488f;
 		m_cam_yaw = 3.150f;
@@ -84,7 +86,8 @@ namespace mini {
 			m_store.get_shader("millable"), 
 			m_store.get_shader("millable_w"), 
 			m_block_div_x, 
-			m_block_div_y);
+			m_block_div_y,
+			m_block_min / m_block_size.y);
 
 		m_block->set_block_size(m_block_size);
 
@@ -402,6 +405,9 @@ namespace mini {
 			gui::prefix_label("Milling Speed: ", 250.0f);
 			ImGui::InputFloat("##milling_speed", &m_milling_speed);
 
+			gui::prefix_label("Blade Size: ", 250.0f);
+			ImGui::InputFloat("##milling_blade", &m_blade_height);
+
 			gui::prefix_label("Show Curves: ", 250.0f);
 			ImGui::Checkbox("##milling_showcurve", &m_curve_enabled);
 
@@ -411,6 +417,7 @@ namespace mini {
 				}
 			}
 
+			gui::clamp(m_blade_height, 0.1f, 10.0f);
 			ImGui::NewLine();
 		}
 
@@ -421,11 +428,24 @@ namespace mini {
 			gui::prefix_label("Divisions V: ", 250.0f);
 			ImGui::InputInt("##milling_div_v", &m_block_div_y);
 
+			gui::prefix_label("Block Min H:", 250.0f);
+			ImGui::InputFloat("milling_block_min", &m_block_min);
+
 			gui::vector_editor("Block Dimensions: ", m_block_size);
 
 			if (ImGui::Button("Apply Settings")) {
 				m_restart_block();
 			}
+
+			gui::clamp(m_block_min, 0.0f, m_block_size.y);
+			gui::clamp(m_block_div_x, 500, 1500);
+			gui::clamp(m_block_div_y, 500, 1500);
+
+			gui::clamp(m_block_size.x, 1.0f, 20.0f);
+			gui::clamp(m_block_size.y, 1.0f, 20.0f);
+			gui::clamp(m_block_size.z, 1.0f, 20.0f);
+
+			gui::clamp(m_block_min, 0.0f, m_block_size.y);
 
 			ImGui::NewLine();
 		}
@@ -507,6 +527,7 @@ namespace mini {
 				m_path_points,
 				static_cast<float>(radius) * 0.1f * 0.5f,
 				spherical,
+				m_blade_height,
 				*m_block.get());
 		}
 	}
@@ -521,6 +542,7 @@ namespace mini {
 				m_path_points,
 				radius,
 				spherical,
+				m_blade_height,
 				*m_block.get());
 		}
 	}
@@ -533,12 +555,15 @@ namespace mini {
 		gui::clamp(m_block_size.y, 1.0f, 20.0f);
 		gui::clamp(m_block_size.z, 1.0f, 20.0f);
 
+		gui::clamp(m_block_min, 0.0f, m_block_size.y);
+
 		m_block.reset();
 		m_block = std::make_shared<millable_block>(
 			m_store.get_shader("millable"),
 			m_store.get_shader("millable_w"),
 			m_block_div_x,
-			m_block_div_y);
+			m_block_div_y,
+			m_block_min / m_block_size.y);
 
 		m_block->set_block_size(m_block_size);
 

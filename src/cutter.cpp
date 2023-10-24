@@ -50,6 +50,7 @@ namespace mini {
 		std::vector<glm::vec3> path_points,
 		float radius, 
 		bool spherical, 
+		float blade_height,
 		const millable_block& block) :
 
 		m_mask(make_mask(radius, spherical, block)),
@@ -57,10 +58,15 @@ namespace mini {
 		m_path_points(path_points),
 		m_interpolation_time(0.0f),
 		m_current_point(0),
+		m_blade_height(blade_height),
 		m_spherical(spherical),
 		m_position(0.0f, -2.5f, 0.0f) {
 
-		m_model = std::make_shared<milling_cutter_model>(shader);
+		m_collision_reported = false;
+		m_depth_reported = false;
+		m_flat_reported = false;
+
+		m_model = std::make_shared<milling_cutter_model>(shader, blade_height);
 	}
 
 	float milling_cutter::get_radius() const {
@@ -80,6 +86,7 @@ namespace mini {
 			while (m_current_point < m_path_points.size() - 1) {
 				auto pos_start = m_path_points[m_current_point];
 				auto pos_end = m_path_points[m_current_point + 1];
+				bool is_vertical = abs(pos_start.y - pos_end.y) > 0.0001f;
 
 				float len = glm::distance(pos_start, pos_end);
 				float t = m_interpolation_time / len;
@@ -89,15 +96,19 @@ namespace mini {
 					m = m - step;
 
 					m_position = glm::mix(pos_start, pos_end, glm::min(1.0f, t - m));
-					m_carve(block, true);
+					m_carve(block, true, is_vertical);
 				}
 
 				m_position = glm::mix(pos_start, pos_end, glm::min(1.0f, t));
-				m_carve(block, true);
+				m_carve(block, true, is_vertical);
 
 				if (t > 1.0f) {
 					m_interpolation_time -= len;
 					m_current_point++;
+
+					m_collision_reported = false;
+					m_depth_reported = false;
+					m_flat_reported = false;
 				} else {
 					break;
 				}
@@ -123,10 +134,11 @@ namespace mini {
 		const float step = m_radius * 0.025f;
 
 		while (m_current_point < m_path_points.size() - 1) {
-			std::cout << "complete paths " << m_current_point << " out of " << m_path_points.size() - 1 << std::endl;
+			std::cout << "[INFO] complete paths " << m_current_point << " out of " << m_path_points.size() - 1 << std::endl;
 
 			auto pos_start = m_path_points[m_current_point];
 			auto pos_end = m_path_points[m_current_point + 1];
+			bool is_vertical = abs(pos_start.y - pos_end.y) > 0.0001f;
 
 			float len = glm::distance(pos_start, pos_end);
 			float t = 1.0f, m = 1.0f;
@@ -137,20 +149,24 @@ namespace mini {
 				m = m - s;
 
 				m_position = glm::mix(pos_start, pos_end, glm::min(1.0f, t - m));
-				m_carve(block, true);
+				m_carve(block, true, is_vertical);
 			}
 
 			m_position = glm::mix(pos_start, pos_end, glm::min(1.0f, t));
-			m_carve(block, true);
+			m_carve(block, true, is_vertical);
 
 			m_current_point++;
+
+			m_collision_reported = false;
+			m_depth_reported = false;
+			m_flat_reported = false;
 		}
 
 		block.refresh_texture();
 		m_position = m_path_points.back();
 	}
 
-	void milling_cutter::m_carve(millable_block& block, bool silent) const {
+	void milling_cutter::m_carve(millable_block& block, bool silent, bool vertical) {
 		// calculate the offset
 		auto block_size = block.get_block_size();
 		float unit_size_x = block_size.x / block.get_heightmap_width();
@@ -167,16 +183,33 @@ namespace mini {
 		int32_t offset_y = static_cast<int32_t>(relative_y / unit_size_y);
 
 		float height = (m_position.y - block_position.y) / block_size.y;
-		
+		millable_block::milling_result_t result;
+
 		if (silent) {
-			block.carve_silent(m_mask, offset_x, offset_y, height, 0.0f);
+			block.carve_silent(m_mask, offset_x, offset_y, height, m_blade_height / block_size.y, result);
 		} else {
-			block.carve(m_mask, offset_x, offset_y, height, 0.0f);
+			block.carve(m_mask, offset_x, offset_y, height, m_blade_height / block_size.y);
+		}
+
+		if (result.collision_error && !m_collision_reported) {
+			m_collision_reported = true;
+			std::cerr << "[ERROR] collision reported on path segment " << m_current_point << "!" << std::endl;
+		}
+
+		if (result.depth_error && !m_depth_reported) {
+			m_depth_reported = true;
+			std::cerr << "[ERROR] milling too deep reported on path segment " << m_current_point << "!" << std::endl;
+		}
+
+		if (!m_flat_reported && result.was_milled && vertical && !m_spherical) {
+			m_flat_reported = true;
+			std::cerr << "[ERROR] vertical milling with flat cutter on path segment " << m_current_point << "!" << std::endl;
 		}
 	}
 
-	milling_cutter_model::milling_cutter_model(std::shared_ptr<shader_program> shader) {
+	milling_cutter_model::milling_cutter_model(std::shared_ptr<shader_program> shader, float blade_height) {
 		m_shader = shader;
+		m_blade_height = blade_height;
 		m_mesh = triangle_mesh::make_cylinder(1.0f, 10.0f, 100, 100);
 	}
 
@@ -188,15 +221,23 @@ namespace mini {
 		const auto& view_matrix = context.get_view_matrix();
 		const auto& proj_matrix = context.get_projection_matrix();
 
+		const auto blade_offset = glm::translate(glm::mat4x4(1.0f), { 0.0f, -m_blade_height, 0.0f });
+		const auto blade_scale = glm::scale(glm::mat4x4(1.0f), { 1.0f, 1.0f, m_blade_height / 10.0f });
+
 		shader.bind();
 
 		context.set_lights(shader);
-		shader.set_uniform("u_surface_color", glm::vec3{ 0.81f, 0.35f, 0.77f });
-		shader.set_uniform("u_shininess", 2.0f);
+		shader.set_uniform("u_surface_color", glm::vec3{ 1.0f, 0.2f, 0.0f });
+		shader.set_uniform("u_shininess", 1.0f);
 
-		shader.set_uniform("u_world", world_matrix);
+		shader.set_uniform("u_world", world_matrix * blade_scale);
 		shader.set_uniform("u_view", view_matrix);
 		shader.set_uniform("u_projection", proj_matrix);
+
+		m_mesh->draw();
+
+		shader.set_uniform("u_surface_color", glm::vec3{ 0.81f, 0.35f, 0.77f });
+		shader.set_uniform("u_world", blade_offset * world_matrix);
 
 		m_mesh->draw();
 	}

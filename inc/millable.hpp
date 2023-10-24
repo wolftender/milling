@@ -16,6 +16,14 @@ namespace mini {
 					mask(width * height) { }
 			};
 
+			struct milling_result_t {
+				bool collision_error;
+				bool depth_error;
+				bool was_milled;
+
+				milling_result_t() : collision_error(false), depth_error(false), was_milled(false) { }
+			};
+
 		private:
 			std::vector<float> m_heightmap;
 
@@ -45,6 +53,8 @@ namespace mini {
 			std::shared_ptr<shader_program> m_block_shader;
 			std::shared_ptr<shader_program> m_wall_shader;
 
+			float m_min_height;
+
 		public:
 			uint32_t get_heightmap_width() const;
 			uint32_t get_heightmap_height() const;
@@ -59,12 +69,13 @@ namespace mini {
 				float depth, 
 				float max_height);
 
-			bool carve_silent(
+			void carve_silent(
 				const milling_mask_t& mask,
 				int32_t offset_x,
 				int32_t offset_y,
 				float depth,
-				float max_height);
+				float max_height,
+				milling_result_t& result);
 
 			void refresh_texture();
 
@@ -80,7 +91,8 @@ namespace mini {
 				std::shared_ptr<shader_program> shader, 
 				std::shared_ptr<shader_program> wall_shader,
 				uint32_t width, 
-				uint32_t height);
+				uint32_t height,
+				float min_height);
 
 			~millable_block();
 
